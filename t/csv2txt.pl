@@ -17,7 +17,9 @@ use strict;
 use warnings;
 use Getopt::Long;
 use File::DosGlob 'glob';
-my $version="1.0";
+use Text::CSV2TXT;
+
+my $version="2.0";
 my $producer="csv2txt";
 my $companyname="SANFACE Software";
 my $SANFACEmail="mailto:sanface\@sanface.com";
@@ -27,7 +29,7 @@ my ($i,$j,$help,$verbose,$Version,$landscape,$center);
 my $delimiter=";";
 my $addblanks=1;
 my $alignment="left";
-my ($workbook,$worksheet,$numformat,$format,$formatpercent,$decimal);
+my ($format,$decimal);
 my $headings="center";
 
 &GetOptions("help"           => \$help,
@@ -57,59 +59,13 @@ if (@ARGV) {
     }
   else {@files = @ARGV}
   foreach $input (@files) {
-    my (@fields,@word);
-    $output = $input . ".txt";
-    $verbose and print "Processing $input file\n";
-    open (IN, "$input") || die "$producer: couldn't open input file $input\n";
-    open (OUT, ">$output") || die "$producer: couldn't open input file $output\n";
-
-    while (<IN>)
-      {
-      s/\n//;
-      s/\r//;
-      push @fields, [split/$delimiter/];
-      }
-
-    for ($j=0;$j<=$#{$fields[0]};$j++) {
-      $word[$j]=length($fields[0][$j])
-      }
-  
-    for ($i=0;$i<=$#fields;$i++) {
-      for ($j=0;$j<=$#{$fields[$i]};$j++) {
-        if ($i eq 0) {next}
-        else {
-          if (length($fields[$i][$j])>$word[$j]) {$word[$j]=length($fields[$i][$j])}
-        }
-      }
-    }
-    
-    $decimal.="f";
-    my ($leftchars,$rightchars);
-    for ($i=0;$i<=$#fields;$i++) {
-      for ($j=0;$j<=$#{$fields[$i]};$j++) {
-	if ($decimal) {
-	  if ($fields[$i][$j]  =~ /\d+\.\d+$/) {
-	    $fields[$i][$j]=sprintf("%.$decimal", $fields[$i][$j]);
-	  }
-	}
-	if ($alignment eq "left") {
-	  $fields[$i][$j].=" " x ($word[$j]-length($fields[$i][$j]) + $addblanks)
-          }
-	if ($alignment eq "right") {
-	  $fields[$i][$j]= " " x ($word[$j]-length($fields[$i][$j])+$addblanks) . $fields[$i][$j]
-          }
-	if ($alignment eq "center") {
- 	  $rightchars = ($word[$j]-length($fields[$i][$j])+$addblanks)/2 + ($word[$j]-length($fields[$i][$j])+$addblanks)%2*0.5;
- 	  $leftchars = $word[$j]-length($fields[$i][$j])+$addblanks-$rightchars;
-	  $fields[$i][$j]= " " x $leftchars . $fields[$i][$j] . " " x $rightchars;
-          }
-	print OUT "$fields[$i][$j]";
-        }
-      print OUT "\n";
-      }
-    $verbose and print "Writing $output file\n";
-    close(IN);
-    close(OUT);
+    my $csv = Text::CSV2TXT->new(
+        $input,              # the csv file
+        $delimiter,          # csv delimiter
+        $alignment,          # cell alignment
+        $addblanks,          # blanks added at the end of every cell
+        $decimal             # max decimal number
+    );
     }
   }
 
